@@ -1,4 +1,4 @@
 <resources>
-<!--    TODO: Before you run your application, you need a Google Maps API key.-->
+<!--I preffer to put the API in local.properties-->
     <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false"></string>
 </resources>
