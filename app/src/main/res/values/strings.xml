@@ -46,4 +46,5 @@
     <string name="location_reminder">Location:</string>
     <string name="latitude_reminder">Latitude:</string>
     <string name="longitude_reminder">Longitude:</string>
+    <string name="location_permission_title">Permission Required</string>
 </resources>

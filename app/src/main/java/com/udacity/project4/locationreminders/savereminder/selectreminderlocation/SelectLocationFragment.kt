@@ -2,19 +2,25 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.*
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.Fragment
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.material.snackbar.Snackbar
 import com.udacity.project4.R
 import com.udacity.project4.authentication.AuthenticationActivity.Companion.TAG
 import com.udacity.project4.base.BaseFragment
@@ -63,11 +69,10 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
-        enableMyLocation()
-        getUserLocation()
         setMapStyle(map)
         setPoiClick(map)
         setMapLongClick(map)
+        getUserLocation()
     }
 
     @SuppressLint("MissingPermission")
@@ -77,10 +82,14 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             fusedLocationProviderClient.lastLocation
                 .addOnSuccessListener { location ->
                     if (location != null) {
+                        map.isMyLocationEnabled = true
                         val currentLatLng = LatLng(location.latitude, location.longitude)
                         map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, DEFAULT_ZOOM))
                     }
                 }
+        }
+        else{
+            enableMyLocation()
         }
     }
 
@@ -118,18 +127,48 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                enableMyLocation()
+                getUserLocation()
+            }
+            else {
+                showPermissionExplanation()
             }
         }
+    }
+
+    private fun showPermissionExplanation() {
+        if (
+            ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
+        ) {
+            Snackbar.make(requireActivity().findViewById(android.R.id.content), R.string.permission_denied_explanation, Snackbar.LENGTH_INDEFINITE)
+                .setAction("OK") {
+                    enableMyLocation()
+                }
+                .show()
+
+        } else {
+            Log.i("permissionStatus", "Location Permission don't granted")
+            val message = getString(R.string.location_required_error)
+            Snackbar.make(requireActivity().findViewById(android.R.id.content), message, Snackbar.LENGTH_INDEFINITE)
+                .setAction("OK") {
+                    openAppSettings()
+                }
+                .show()
+        }
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        val uri = Uri.fromParts("package", requireActivity().packageName, null)
+        intent.data = uri
+        startActivity(intent)
     }
 
     @SuppressLint("MissingPermission")
     private fun enableMyLocation() {
         if (isPermissionGranted()) {
-            map.isMyLocationEnabled = true
+            getUserLocation()
         } else {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
+            requestPermissions(
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                 REQUEST_LOCATION_PERMISSION
             )
@@ -218,6 +257,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             map.mapType = GoogleMap.MAP_TYPE_TERRAIN
             true
         }
+
         else -> super.onOptionsItemSelected(item)
     }
 }

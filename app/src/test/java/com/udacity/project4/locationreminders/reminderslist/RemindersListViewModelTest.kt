@@ -13,6 +13,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.pauseDispatcher
 import kotlinx.coroutines.test.resumeDispatcher
 import kotlinx.coroutines.test.runBlockingTest
+import org.hamcrest.CoreMatchers.notNullValue
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -63,4 +64,13 @@ class RemindersListViewModelTest {
         assertThat(viewModel.remindersList.getOrAwaitValue().size, `is`(1))
     }
 
+    @Test
+    fun shouldReturnError() = mainCoroutineRule.runBlockingTest {
+        fakeDataSource.setReturnsError(true)
+        viewModel.loadReminders()
+
+        assertThat(
+            viewModel.showSnackBar.getOrAwaitValue(), `is`(notNullValue())
+        )
+    }
 }
